@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DE Polizei Monitor</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <!-- Leaflet Heat -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+  <!-- SheetJS für Excel-Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:        #0a0c10;
+      --surface:   #111318;
+      --border:    #1e2330;
+      --accent:    #00e5ff;
+      --accent2:   #ff3b5c;
+      --accent3:   #f5a623;
+      --text:      #d0d8e8;
+      --muted:     #4a5568;
+      --mono:      'IBM Plex Mono', monospace;
+      --sans:      'IBM Plex Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: var(--bg);
+      font-family: var(--mono);
+      flex-shrink: 0;
+    }
+    .logo h1 {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      color: var(--accent);
+      line-height: 1.2;
+    }
+    .logo span {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: .06em;
+    }
+
+    .header-stats {
+      display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-val {
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .stat-lbl {
+      font-size: 9px;
+      letter-spacing: .1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .last-update {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 180px;
+      max-width: 340px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 10px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    input[type=text], select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 7px 10px 7px 32px;
+      border-radius: 4px;
+      outline: none;
+      width: 100%;
+      transition: border-color .2s;
+    }
+    input[type=text]:focus, select:focus {
+      border-color: var(--accent);
+    }
+    select { padding-left: 10px; cursor: pointer; }
+
+    .pills {
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .pill {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .06em;
+      padding: 5px 10px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .pill.active { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+    .pill.active-red { background: var(--accent2); border-color: var(--accent2); color: #fff; font-weight: 600; }
+
+    .btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 7px 14px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn:hover { border-color: var(--accent3); color: var(--accent3); }
+    .btn-accent {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-accent:hover { background: var(--accent); color: var(--bg); }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ── MAP ── */
+    #map {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      background: #0d1117;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 380px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sidebar-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .count-badge {
+      font-family: var(--mono);
+      font-size: 11px;
+      background: var(--accent);
+      color: var(--bg);
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .incident-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .incident-list::-webkit-scrollbar { width: 4px; }
+    .incident-list::-webkit-scrollbar-track { background: transparent; }
+    .incident-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .incident-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all .15s;
+      position: relative;
+    }
+    .incident-card:hover {
+      border-color: var(--accent);
+      background: rgba(0,229,255,.04);
+    }
+    .incident-card.active {
+      border-color: var(--accent);
+      background: rgba(0,229,255,.07);
+    }
+    .incident-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 6px 0 0 6px;
+      background: var(--cat-color, var(--muted));
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+    .card-cat {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--cat-color, var(--muted));
+      font-weight: 600;
+    }
+    .card-date {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+      line-height: 1.35;
+    }
+    .card-loc {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .card-src {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 4px;
+      opacity: .7;
+    }
+
+    /* ── DETAIL PANEL ── */
+    .detail-panel {
+      border-top: 1px solid var(--border);
+      padding: 14px 16px;
+      display: none;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .detail-panel.open { display: block; }
+    .detail-panel::-webkit-scrollbar { width: 4px; }
+    .detail-panel::-webkit-scrollbar-thumb { background: var(--border); }
+    .dp-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .dp-meta {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .dp-meta span {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .dp-text {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text);
+      opacity: .85;
+    }
+    .dp-link {
+      display: inline-block;
+      margin-top: 10px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(0,229,255,.3);
+    }
+    .dp-link:hover { border-color: var(--accent); }
+    .dp-close {
+      float: right;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .dp-close:hover { color: var(--accent2); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--muted);
+      gap: 8px;
+    }
+    .empty-state svg { opacity: .3; }
+    .empty-state p { font-family: var(--mono); font-size: 11px; }
+
+    /* ── LOADING ── */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      gap: 16px;
+    }
+    .loading-overlay.hidden { display: none; }
+    .loader-hex {
+      width: 48px; height: 48px;
+      background: var(--accent);
+      clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .5; transform: scale(.85); }
+    }
+    .loading-text {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .1em;
+    }
+
+    /* ── LEAFLET CUSTOM ── */
+    .leaflet-popup-content-wrapper {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.6);
+      font-family: var(--sans);
+    }
+    .leaflet-popup-tip { background: var(--surface); }
+    .leaflet-popup-content { margin: 12px 14px; }
+    .popup-cat { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+    .popup-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    .popup-loc { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+    .leaflet-control-zoom a {
+      background: var(--surface) !important;
+      color: var(--text) !important;
+      border-color: var(--border) !important;
+    }
+    .leaflet-control-zoom a:hover { color: var(--accent) !important; }
+
+    /* ── TOGGLE MAP VIEW ── */
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+    }
+    .vtbtn {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 5px 10px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .vtbtn.active { background: var(--surface); border-color: var(--accent); color: var(--accent); }
+
+    @media (max-width: 700px) {
+      .sidebar { width: 100%; height: 45vh; }
+      .main { flex-direction: column-reverse; }
+      #map { height: 55vh; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader-hex"></div>
+  <div class="loading-text">LADE VORFALLSDATEN…</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">DE</div>
+    <div>
+      <h1>POLIZEI OSINT MONITOR</h1>
+      <span>DEUTSCHLAND · ALLE BUNDESLÄNDER · BUNDESPOLIZEI</span>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat"><div class="stat-val" id="statTotal">—</div><div class="stat-lbl">Vorfälle</div></div>
+    <div class="stat"><div class="stat-val" id="statGeo">—</div><div class="stat-lbl">Georeferenziert</div></div>
+    <div class="stat"><div class="stat-val" id="statSources">—</div><div class="stat-lbl">Quellen</div></div>
+    <div class="stat"><div class="stat-val" id="statToday">—</div><div class="stat-lbl">Heute</div></div>
+  </div>
+  <div class="last-update" id="lastUpdate">—</div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="text" id="searchInput" placeholder="Ort, Stichwort, Bundesland …" />
+  </div>
+
+  <select id="bundeslandFilter">
+    <option value="">Alle Bundesländer</option>
+    <option>Baden-Württemberg</option>
+    <option>Bayern</option>
+    <option>Berlin</option>
+    <option>Brandenburg</option>
+    <option>Bremen</option>
+    <option>Hamburg</option>
+    <option>Hessen</option>
+    <option>Mecklenburg-Vorpommern</option>
+    <option>Niedersachsen</option>
+    <option>Nordrhein-Westfalen</option>
+    <option>Rheinland-Pfalz</option>
+    <option>Saarland</option>
+    <option>Sachsen</option>
+    <option>Sachsen-Anhalt</option>
+    <option>Schleswig-Holstein</option>
+    <option>Thüringen</option>
+    <option>Bundespolizei</option>
+  </select>
+
+  <select id="zeitFilter">
+    <option value="">Zeitraum: Alle</option>
+    <option value="1">Heute</option>
+    <option value="3">Letzte 3 Tage</option>
+    <option value="7">Letzte 7 Tage</option>
+    <option value="30">Letzter Monat</option>
+  </select>
+
+  <div class="pills" id="catPills"></div>
+
+  <div class="view-toggle">
+    <button class="vtbtn active" id="btnHeat" onclick="setView('heat')">HEAT</button>
+    <button class="vtbtn" id="btnDots" onclick="setView('dots')">PUNKTE</button>
+  </div>
+
+  <button class="btn btn-accent" onclick="exportExcel()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    EXCEL
+  </button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div id="map"></div>
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">VORFÄLLE</span>
+      <span class="count-badge" id="sidebarCount">0</span>
+    </div>
+    <div class="incident-list" id="incidentList"></div>
+
+    <!-- DETAIL PANEL -->
+    <div class="detail-panel" id="detailPanel">
+      <button class="dp-close" onclick="closeDetail()">✕</button>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── KATEGORIE-FARBEN ──
+const CAT_COLORS = {
+  'Unfall':        '#f5a623',
+  'Einbruch':      '#ff3b5c',
+  'Diebstahl':     '#9b59b6',
+  'Körperverletzung': '#e74c3c',
+  'Betrug':        '#3498db',
+  'Drogen':        '#1abc9c',
+  'Verkehr':       '#f39c12',
+  'Vermisstenfall':'#00e5ff',
+  'Brand':         '#e67e22',
+  'Sonstiges':     '#4a5568'
+};
+const CAT_LIST = Object.keys(CAT_COLORS);
+
+// ── STATE ──
+let allData = [];
+let filtered = [];
+let markers = [];
+let heatLayer = null;
+let dotsGroup = null;
+let currentView = 'heat';
+let activeFilters = { search: '', bundesland: '', tage: '', cats: new Set() };
+let selectedCard = null;
+let map;
+
+// ── MAP INIT ──
+function initMap() {
+  map = L.map('map', { zoomControl: true, attributionControl: false }).setView([51.2, 10.4], 6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19
+  }).addTo(map);
+  L.control.attribution({ prefix: '© OpenStreetMap · CartoDB' }).addTo(map);
+  dotsGroup = L.layerGroup().addTo(map);
+}
+
+// ── DATEN LADEN ──
+async function loadData() {
+  try {
+    const res = await fetch('data/incidents.json');
+    if (!res.ok) throw new Error('Keine Daten gefunden');
+    allData = await res.json();
+  } catch (e) {
+    // Demo-Daten wenn keine JSON-Datei vorhanden
+    allData = generateDemoData();
+  }
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  initCatPills();
+  updateStats();
+  applyFilters();
+}
+
+// ── DEMO-DATEN (Fallback) ──
+function generateDemoData() {
+  const cats = CAT_LIST;
+  const bls = ['Bayern','NRW','Baden-Württemberg','Berlin','Hessen','Sachsen','Niedersachsen','Hamburg','Bundespolizei'];
+  const locs = [
+    {n:'München',lat:48.1351,lng:11.5820,bl:'Bayern'},
+    {n:'Nürnberg',lat:49.4521,lng:11.0767,bl:'Bayern'},
+    {n:'Köln',lat:50.9333,lng:6.9500,bl:'NRW'},
+    {n:'Dortmund',lat:51.5136,lng:7.4653,bl:'NRW'},
+    {n:'Stuttgart',lat:48.7758,lng:9.1829,bl:'Baden-Württemberg'},
+    {n:'Berlin',lat:52.5200,lng:13.4050,bl:'Berlin'},
+    {n:'Frankfurt',lat:50.1109,lng:8.6821,bl:'Hessen'},
+    {n:'Hamburg',lat:53.5753,lng:10.0153,bl:'Hamburg'},
+    {n:'Dresden',lat:51.0504,lng:13.7373,bl:'Sachsen'},
+    {n:'Hannover',lat:52.3759,lng:9.7320,bl:'Niedersachsen'},
+    {n:'Leipzig',lat:51.3397,lng:12.3731,bl:'Sachsen'},
+    {n:'Düsseldorf',lat:51.2217,lng:6.7762,bl:'NRW'},
+    {n:'Augsburg',lat:48.3717,lng:10.8983,bl:'Bayern'},
+    {n:'Bremen',lat:53.0793,lng:8.8017,bl:'Bremen'},
+    {n:'Essen',lat:51.4556,lng:7.0116,bl:'NRW'},
+    {n:'Karlsruhe',lat:49.0069,lng:8.4037,bl:'Baden-Württemberg'},
+    {n:'Rostock',lat:54.0924,lng:12.0991,bl:'Mecklenburg-Vorpommern'},
+    {n:'Erfurt',lat:50.9787,lng:11.0328,bl:'Thüringen'},
+  ];
+  const titles = {
+    'Unfall': ['Verkehrsunfall mit Verletzten','Auffahrunfall auf BAB','Fahrradunfall in Innenstadt','LKW-Unfall auf Bundesstraße'],
+    'Einbruch': ['Einbruch in Einfamilienhaus','Einbruchversuch in Gewerbebetrieb','Serieneinbrecher festgenommen','Einbruch in Schule'],
+    'Diebstahl': ['Taschendiebstahl im ÖPNV','Fahrraddiebstahl','Ladendiebstahl','Diebstahl aus PKW'],
+    'Körperverletzung': ['Körperverletzung nach Streit','Schlägerei in Fußgängerzone','Angriff auf Passanten'],
+    'Betrug': ['Telefonbetrug','Enkeltrick-Betrug','Phishing-Opfer','Falsche Polizeibeamte'],
+    'Drogen': ['Drogenhandel unterbunden','Fund von Betäubungsmitteln','Festnahme nach Drogendelikt'],
+    'Verkehr': ['Trunkenheitsfahrt','Führerflucht','Geschwindigkeitsverstoß','Geisterfahrer gemeldet'],
+    'Vermisstenfall': ['Vermisste Person aufgefunden','Suchaktion erfolgreich'],
+    'Brand': ['Wohnungsbrand','Fahrzeugbrand','Containerbrand','Scheunenbrand'],
+    'Sonstiges': ['Polizeieinsatz','Öffentliche Störung','Meldung eingegangen']
+  };
+  const now = Date.now();
+  return Array.from({length: 180}, (_, i) => {
+    const loc = locs[Math.floor(Math.random() * locs.length)];
+    const cat = cats[Math.floor(Math.random() * cats.length)];
+    const ts = now - Math.random() * 30 * 86400000;
+    const titArr = titles[cat] || ['Vorfall'];
+    return {
+      id: i,
+      title: titArr[Math.floor(Math.random() * titArr.length)],
+      category: cat,
+      bundesland: loc.bl,
+      location: loc.n + (Math.random() > .5 ? '-' + ['Mitte','Nord','West','Süd','Ost'][Math.floor(Math.random()*5)] : ''),
+      lat: loc.lat + (Math.random()-.5)*.15,
+      lng: loc.lng + (Math.random()-.5)*.15,
+      date: new Date(ts).toISOString(),
+      source: loc.bl === 'Bundespolizei' ? 'bpol.de' : 'polizei.' + loc.bl.toLowerCase().replace(/\s/g,'-') + '.de',
+      url: '#',
+      summary: 'Am ' + new Date(ts).toLocaleDateString('de-DE') + ' ereignete sich in ' + loc.n + ' ein Vorfall der Kategorie ' + cat + '. Die Polizei hat die Ermittlungen aufgenommen.'
+    };
+  });
+}
+
+// ── KATEGORIE PILLS ──
+function initCatPills() {
+  const present = [...new Set(allData.map(d => d.category))];
+  const wrap = document.getElementById('catPills');
+  wrap.innerHTML = '';
+  present.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'pill';
+    btn.textContent = cat;
+    btn.dataset.cat = cat;
+    btn.style.setProperty('--cat-color', CAT_COLORS[cat] || '#4a5568');
+    btn.onclick = () => toggleCat(cat, btn);
+    wrap.appendChild(btn);
+  });
+}
+
+function toggleCat(cat, btn) {
+  if (activeFilters.cats.has(cat)) {
+    activeFilters.cats.delete(cat);
+    btn.classList.remove('active');
+  } else {
+    activeFilters.cats.add(cat);
+    btn.classList.add('active');
+  }
+  applyFilters();
+}
+
+// ── FILTER ──
+document.getElementById('searchInput').addEventListener('input', e => {
+  activeFilters.search = e.target.value.toLowerCase();
+  applyFilters();
+});
+document.getElementById('bundeslandFilter').addEventListener('change', e => {
+  activeFilters.bundesland = e.target.value;
+  applyFilters();
+});
+document.getElementById('zeitFilter').addEventListener('change', e => {
+  activeFilters.tage = e.target.value;
+  applyFilters();
+});
+
+function applyFilters() {
+  const now = Date.now();
+  filtered = allData.filter(d => {
+    if (activeFilters.search) {
+      const hay = [d.title, d.location, d.bundesland, d.summary].join(' ').toLowerCase();
+      if (!hay.includes(activeFilters.search)) return false;
+    }
+    if (activeFilters.bundesland && d.bundesland !== activeFilters.bundesland) return false;
+    if (activeFilters.tage) {
+      const ms = parseInt(activeFilters.tage) * 86400000;
+      if (now - new Date(d.date).getTime() > ms) return false;
+    }
+    if (activeFilters.cats.size > 0 && !activeFilters.cats.has(d.category)) return false;
+    return true;
+  });
+  renderList();
+  renderMap();
+  document.getElementById('sidebarCount').textContent = filtered.length;
+}
+
+// ── RENDER LIST ──
+function renderList() {
+  const list = document.getElementById('incidentList');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>KEINE VORFÄLLE GEFUNDEN</p></div>';
+    return;
+  }
+  const sorted = [...filtered].sort((a,b) => new Date(b.date) - new Date(a.date));
+  list.innerHTML = sorted.map((d, i) => {
+    const col = CAT_COLORS[d.category] || '#4a5568';
+    const dt = new Date(d.date);
+    const dateStr = dt.toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'2-digit'});
+    return `<div class="incident-card" id="card-${d.id}" style="--cat-color:${col}"
+      onclick="selectIncident(${d.id})">
+      <div class="card-top">
+        <span class="card-cat">${d.category}</span>
+        <span class="card-date">${dateStr}</span>
+      </div>
+      <div class="card-title">${d.title}</div>
+      <div class="card-loc">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        ${d.location} · ${d.bundesland}
+      </div>
+      <div class="card-src">${d.source}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER MAP ──
+function renderMap() {
+  // Clear
+  if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
+  dotsGroup.clearLayers();
+  markers = [];
+
+  const geo = filtered.filter(d => d.lat && d.lng);
+
+  if (currentView === 'heat') {
+    const pts = geo.map(d => [d.lat, d.lng, 1]);
+    if (pts.length > 0) {
+      heatLayer = L.heatLayer(pts, {
+        radius: 28, blur: 20, maxZoom: 12,
+        gradient: { 0.2: '#00e5ff', 0.5: '#f5a623', 0.8: '#ff3b5c', 1.0: '#ffffff' }
+      }).addTo(map);
+    }
+  } else {
+    geo.forEach(d => {
+      const col = CAT_COLORS[d.category] || '#4a5568';
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="width:10px;height:10px;border-radius:50%;background:${col};border:2px solid rgba(255,255,255,.3);box-shadow:0 0 6px ${col}88"></div>`,
+        iconSize: [10,10], iconAnchor: [5,5]
+      });
+      const m = L.marker([d.lat, d.lng], {icon})
+        .bindPopup(`<div class="popup-cat">${d.category}</div>
+          <div class="popup-title">${d.title}</div>
+          <div class="popup-loc">${d.location} · ${d.bundesland}</div>`)
+        .on('click', () => selectIncident(d.id));
+      m.incidentId = d.id;
+      dotsGroup.addLayer(m);
+      markers.push(m);
+    });
+  }
+}
+
+// ── SELECT ──
+function selectIncident(id) {
+  const d = allData.find(x => x.id === id);
+  if (!d) return;
+
+  // Highlight card
+  if (selectedCard) document.getElementById('card-' + selectedCard)?.classList.remove('active');
+  selectedCard = id;
+  const card = document.getElementById('card-' + id);
+  if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+
+  // Detail panel
+  showDetail(d);
+
+  // Fly to map
+  if (d.lat && d.lng) {
+    map.flyTo([d.lat, d.lng], Math.max(map.getZoom(), 13), { duration: .8 });
+  }
+}
+
+function showDetail(d) {
+  const panel = document.getElementById('detailPanel');
+  const col = CAT_COLORS[d.category] || '#4a5568';
+  const dt = new Date(d.date);
+  document.getElementById('detailContent').innerHTML = `
+    <div class="dp-title" style="border-left:3px solid ${col};padding-left:8px">${d.title}</div>
+    <div class="dp-meta">
+      <span>📅 ${dt.toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})}</span>
+      <span>📍 ${d.location}</span>
+      <span>🏛 ${d.bundesland}</span>
+    </div>
+    <div class="dp-text">${d.summary || 'Keine weiteren Details verfügbar.'}</div>
+    ${d.url && d.url !== '#' ? `<a class="dp-link" href="${d.url}" target="_blank" rel="noopener">→ Originalmeldung lesen</a>` : ''}
+  `;
+  panel.classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  if (selectedCard) document.getElementById('card-' + selectedCard)?.classList.remove('active');
+  selectedCard = null;
+}
+
+// ── VIEW TOGGLE ──
+function setView(v) {
+  currentView = v;
+  document.getElementById('btnHeat').classList.toggle('active', v === 'heat');
+  document.getElementById('btnDots').classList.toggle('active', v === 'dots');
+  renderMap();
+}
+
+// ── STATS ──
+function updateStats() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayCount = allData.filter(d => new Date(d.date) >= today).length;
+  const geoCount = allData.filter(d => d.lat && d.lng).length;
+  const sources = new Set(allData.map(d => d.source)).size;
+
+  document.getElementById('statTotal').textContent = allData.length;
+  document.getElementById('statGeo').textContent = geoCount;
+  document.getElementById('statSources').textContent = sources;
+  document.getElementById('statToday').textContent = todayCount;
+
+  const dates = allData.map(d => new Date(d.date)).filter(Boolean);
+  const maxDate = dates.length ? new Date(Math.max(...dates)) : null;
+  document.getElementById('lastUpdate').textContent = maxDate
+    ? 'Aktualisiert: ' + maxDate.toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    : '';
+}
+
+// ── EXCEL EXPORT ──
+function exportExcel() {
+  const rows = filtered.map(d => ({
+    Datum: new Date(d.date).toLocaleDateString('de-DE'),
+    Kategorie: d.category,
+    Titel: d.title,
+    Ort: d.location,
+    Bundesland: d.bundesland,
+    Quelle: d.source,
+    URL: d.url,
+    Zusammenfassung: d.summary || ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Vorfälle');
+  XLSX.writeFile(wb, 'polizei-monitor-de_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+// ── INIT ──
+initMap();
+loadData();
+</script>
+</body>
+</html>
