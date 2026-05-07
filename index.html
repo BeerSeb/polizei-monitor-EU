@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -302,56 +301,96 @@ function initMap(){
 }
 
 // ── DATA ──
+let isDemoData = false;
+
 async function loadData(){
   try {
     const res = await fetch('data/incidents.json');
-    if(!res.ok) throw new Error();
-    allData = await res.json();
-  } catch {
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json = await res.json();
+    if(!Array.isArray(json) || json.length===0) throw new Error('Leer');
+    allData = json;
+    isDemoData = false;
+  } catch(e) {
+    console.warn('Echte Daten nicht verfügbar ('+e.message+'), zeige Demo-Daten');
     allData = generateDemoData();
+    isDemoData = true;
   }
   document.getElementById('loadingOverlay').classList.add('hidden');
+  if(isDemoData){
+    const banner = document.createElement('div');
+    banner.style.cssText='background:#f5a62322;border-bottom:1px solid #f5a623;padding:5px 16px;font-family:var(--mono);font-size:10px;color:#f5a623;letter-spacing:.08em;flex-shrink:0;';
+    banner.textContent='⚠ DEMO-MODUS – keine echten Daten geladen. Bitte Scraper ausführen (GitHub Actions → Run workflow).';
+    document.querySelector('.main').before(banner);
+  }
   initCatPills();
   updateStats();
   applyFilters();
 }
 
-// ── DEMO DATA ──
+// ── DEMO DATA (alle Länder) ──
 function generateDemoData(){
   const cats = Object.keys(CAT_COLORS);
   const locs = [
-    {n:'München',lat:48.1351,lng:11.5820,bl:'Bayern'},
-    {n:'Nürnberg',lat:49.4521,lng:11.0767,bl:'Bayern'},
-    {n:'Köln',lat:50.9333,lng:6.9500,bl:'Nordrhein-Westfalen'},
-    {n:'Dortmund',lat:51.5136,lng:7.4653,bl:'Nordrhein-Westfalen'},
-    {n:'Stuttgart',lat:48.7758,lng:9.1829,bl:'Baden-Württemberg'},
-    {n:'Berlin',lat:52.5200,lng:13.4050,bl:'Berlin'},
-    {n:'Frankfurt',lat:50.1109,lng:8.6821,bl:'Hessen'},
-    {n:'Hamburg',lat:53.5753,lng:10.0153,bl:'Hamburg'},
-    {n:'Dresden',lat:51.0504,lng:13.7373,bl:'Sachsen'},
-    {n:'Hannover',lat:52.3759,lng:9.7320,bl:'Niedersachsen'},
-    {n:'Leipzig',lat:51.3397,lng:12.3731,bl:'Sachsen'},
-    {n:'Düsseldorf',lat:51.2217,lng:6.7762,bl:'Nordrhein-Westfalen'},
-    {n:'Augsburg',lat:48.3717,lng:10.8983,bl:'Bayern'},
-    {n:'Karlsruhe',lat:49.0069,lng:8.4037,bl:'Baden-Württemberg'},
-    {n:'Erfurt',lat:50.9787,lng:11.0328,bl:'Thüringen'},
-    {n:'Rostock',lat:54.0924,lng:12.0991,bl:'Mecklenburg-Vorpommern'},
+    // Deutschland
+    {n:'München',lat:48.1351,lng:11.5820,land:'Bayern',country:'Deutschland'},
+    {n:'Berlin',lat:52.5200,lng:13.4050,land:'Berlin',country:'Deutschland'},
+    {n:'Hamburg',lat:53.5753,lng:10.0153,land:'Hamburg',country:'Deutschland'},
+    {n:'Köln',lat:50.9333,lng:6.9500,land:'NRW',country:'Deutschland'},
+    {n:'Frankfurt',lat:50.1109,lng:8.6821,land:'Hessen',country:'Deutschland'},
+    // Österreich
+    {n:'Wien',lat:48.2082,lng:16.3738,land:'Wien',country:'Österreich'},
+    {n:'Graz',lat:47.0707,lng:15.4395,land:'Steiermark',country:'Österreich'},
+    {n:'Salzburg',lat:47.8095,lng:13.0550,land:'Salzburg',country:'Österreich'},
+    // Schweiz
+    {n:'Zürich',lat:47.3769,lng:8.5417,land:'Zürich',country:'Schweiz'},
+    {n:'Bern',lat:46.9481,lng:7.4474,land:'Bern',country:'Schweiz'},
+    {n:'Basel',lat:47.5596,lng:7.5886,land:'Basel',country:'Schweiz'},
+    // Niederlande
+    {n:'Amsterdam',lat:52.3676,lng:4.9041,land:'Noord-Holland',country:'Niederlande'},
+    {n:'Rotterdam',lat:51.9244,lng:4.4777,land:'Zuid-Holland',country:'Niederlande'},
+    {n:'Den Haag',lat:52.0705,lng:4.3007,land:'Zuid-Holland',country:'Niederlande'},
+    // Frankreich
+    {n:'Paris',lat:48.8566,lng:2.3522,land:'Île-de-France',country:'Frankreich'},
+    {n:'Lyon',lat:45.7640,lng:4.8357,land:'Auvergne-Rhône-Alpes',country:'Frankreich'},
+    {n:'Marseille',lat:43.2965,lng:5.3698,land:'PACA',country:'Frankreich'},
+    // Belgien
+    {n:'Brüssel',lat:50.8503,lng:4.3517,land:'Bruxelles',country:'Belgien'},
+    {n:'Antwerpen',lat:51.2194,lng:4.4025,land:'Antwerpen',country:'Belgien'},
+    // Spanien
+    {n:'Madrid',lat:40.4168,lng:-3.7038,land:'Comunidad de Madrid',country:'Spanien'},
+    {n:'Barcelona',lat:41.3851,lng:2.1734,land:'Cataluña',country:'Spanien'},
+    // Italien
+    {n:'Rom',lat:41.9028,lng:12.4964,land:'Lazio',country:'Italien'},
+    {n:'Mailand',lat:45.4642,lng:9.1900,land:'Lombardia',country:'Italien'},
+    // UK
+    {n:'London',lat:51.5074,lng:-0.1278,land:'Metropolitan Police',country:'Vereinigtes Königreich'},
+    {n:'Manchester',lat:53.4808,lng:-2.2426,land:'Greater Manchester',country:'Vereinigtes Königreich'},
+    // Polen
+    {n:'Warschau',lat:52.2297,lng:21.0122,land:'Mazowieckie',country:'Polen'},
+    {n:'Krakau',lat:50.0647,lng:19.9450,land:'Małopolskie',country:'Polen'},
+    // Tschechien
+    {n:'Prag',lat:50.0755,lng:14.4378,land:'Praha',country:'Tschechien'},
+    {n:'Brünn',lat:49.1951,lng:16.6068,land:'Jihomoravský',country:'Tschechien'},
   ];
   const now = Date.now();
-  return Array.from({length:200},(_,i) => {
+  return Array.from({length:400},(_,i) => {
     const loc = locs[Math.floor(Math.random()*locs.length)];
     const cat = cats[Math.floor(Math.random()*cats.length)];
-    const ts = now - Math.random()*30*86400000;
+    const ts  = now - Math.random()*30*86400000;
     return {
-      id: i,
+      id: 'demo_'+i,
       title: cat+' in '+loc.n,
-      summary: 'Polizeimeldung vom '+new Date(ts).toLocaleDateString('de-DE')+'. Die Einsatzkräfte wurden alarmiert und die Ermittlungen wurden aufgenommen.',
-      category: cat, bundesland: loc.bl, location: loc.n,
-      lat: loc.lat+(Math.random()-.5)*.25,
-      lng: loc.lng+(Math.random()-.5)*.25,
+      summary: `Polizeimeldung vom ${new Date(ts).toLocaleDateString('de-DE')}. Die Einsatzkräfte wurden um ${Math.floor(8+Math.random()*14)}:${String(Math.floor(Math.random()*60)).padStart(2,'0')} Uhr alarmiert. Die Ermittlungen wurden aufgenommen. Zeugen werden gebeten, sich bei der zuständigen Polizeidienststelle zu melden.`,
+      category: cat,
+      land: loc.land,
+      country: loc.country,
+      location: loc.n,
+      lat: loc.lat+(Math.random()-.5)*.2,
+      lng: loc.lng+(Math.random()-.5)*.2,
       date: new Date(ts).toISOString(),
       url: '#',
-      source: 'polizei.'+loc.bl.toLowerCase().replace(/[\s-]/g,'')+'.de'
+      source: 'demo-daten.local'
     };
   });
 }
@@ -470,17 +509,47 @@ function selectIncident(id){
 
 function showDetail(d){
   const col = CAT_COLORS[d.category]||'#4a5568';
-  const dt = new Date(d.date);
+  const dt  = new Date(d.date);
+  const dateStr = dt.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const timeStr = dt.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  const region = [d.location, d.land||d.bundesland, d.country].filter(Boolean).join(' · ');
+  const distHtml = d._distKm!=null
+    ? `<span style="color:var(--accent3)">↔ ${d._distKm.toFixed(1)} km entfernt</span>`
+    : '';
+  const demoNote = d.source==='demo-daten.local'
+    ? `<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:6px;border-top:1px solid var(--border);padding-top:6px">⚠ Demo-Datensatz – kein echter Vorfall</div>`
+    : '';
+
   document.getElementById('detailContent').innerHTML=`
-    <div class="dp-title" style="border-left:3px solid ${col};padding-left:8px">${d.title}</div>
-    <div class="dp-meta">
-      <span>📅 ${dt.toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})}</span>
-      <span>📍 ${d.location}</span>
-      <span>🏛 ${d.bundesland}</span>
-      ${d._distKm!=null?`<span>↔ ${d._distKm.toFixed(1)} km zur Route</span>`:''}
+    <div style="border-left:3px solid ${col};padding-left:10px;margin-bottom:10px">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:${col};margin-bottom:4px">${d.category}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.4">${d.title}</div>
     </div>
-    <div class="dp-text">${d.summary||'Keine Details verfügbar.'}</div>
-    ${d.url&&d.url!=='#'?`<a class="dp-link" href="${d.url}" target="_blank">→ Originalmeldung</a>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 9px">
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--muted);margin-bottom:2px">DATUM / UHRZEIT</div>
+        <div style="font-size:11px;color:var(--text)">${dateStr}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${timeStr} Uhr</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 9px">
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--muted);margin-bottom:2px">REGION</div>
+        <div style="font-size:11px;color:var(--text)">${region}</div>
+        ${distHtml}
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 9px">
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--muted);margin-bottom:2px">QUELLE</div>
+        <div style="font-size:11px;color:var(--text);word-break:break-all">${d.source||'—'}</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 9px">
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--muted);margin-bottom:2px">KOORDINATEN</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text)">${d.lat?d.lat.toFixed(4):'—'}, ${d.lng?d.lng.toFixed(4):'—'}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;line-height:1.65;color:var(--text);opacity:.9;margin-bottom:8px">${d.summary||'Keine weiteren Details verfügbar.'}</div>
+    ${d.url&&d.url!=='#'
+      ? `<a class="dp-link" href="${d.url}" target="_blank" rel="noopener">→ Originalmeldung öffnen</a>`
+      : `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Kein direkter Link verfügbar</span>`}
+    ${demoNote}
   `;
   document.getElementById('detailPanel').classList.add('open');
 }
@@ -524,7 +593,7 @@ async function calcStandort(){
     const radiusKm = parseInt(document.getElementById('radiusSlider').value);
     standortMarker = L.marker([geo.lat, geo.lng], {
       icon: L.divIcon({className:'', html:`<div style="width:14px;height:14px;border-radius:50%;background:#f5a623;border:3px solid #fff;box-shadow:0 0 10px #f5a623"></div>`, iconSize:[14,14], iconAnchor:[7,7]})
-    }).addTo(map).bindPopup(`<div class="popup-cat">STANDORT</div><div class="popup-title">${txt}</div><div class="popup-loc">Radius: ${radiusKm} km</div>`).openPopup();
+    }).addTo(map).bindPopup(`<div class="popup-cat">STANDORT</div><div class="popup-title">${txt}</div><div class="popup-loc">Radius: ${radiusKm} km</div><div class="popup-loc" style="margin-top:3px;font-size:9px;opacity:.6">${geo.displayName?.split(',').slice(0,3).join(',')||''}</div>`).openPopup();
 
     standortCircle = L.circle([geo.lat, geo.lng], {
       radius: radiusKm * 1000,
@@ -536,7 +605,7 @@ async function calcStandort(){
     isRouteMode = true;
 
     document.getElementById('routeInfo').innerHTML =
-      `Standort: <span>${txt}</span> &nbsp;|&nbsp; 📍 Radius: <span>${radiusKm} km</span>`;
+      `Standort: <span>${txt}</span>${geo.displayName?' <span style="opacity:.5;font-size:9px">('+geo.displayName.split(',').slice(0,2).join(',')+')</span>':''} &nbsp;|&nbsp; 📍 Radius: <span>${radiusKm} km</span> &nbsp;|&nbsp; ${routeIncidents.length} Vorfälle`;
     document.getElementById('sidebarTitle').textContent = 'VORFÄLLE IM UMKREIS';
     document.getElementById('sidebarCount').classList.add('route-mode');
 
@@ -578,11 +647,12 @@ document.getElementById('bufferSlider').addEventListener('input', () => {
 
 // ── GEOCODE via Nominatim ──
 async function geocodePlace(name){
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name+', Deutschland')}&format=json&limit=1&countrycodes=de`;
-  const res = await fetch(url, {headers:{'User-Agent':'DE-Polizei-Monitor/1.0 (github.com)'}});
+  // Kein countrycodes-Filter – damit funktioniert auch Paris (FR), London, etc.
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1&accept-language=de`;
+  const res = await fetch(url, {headers:{'User-Agent':'Europa-Polizei-Monitor/2.0'}});
   const data = await res.json();
   if(!data.length) throw new Error('Ort nicht gefunden: '+name);
-  return {lat:parseFloat(data[0].lat), lng:parseFloat(data[0].lon)};
+  return {lat:parseFloat(data[0].lat), lng:parseFloat(data[0].lon), displayName: data[0].display_name};
 }
 
 // ── ROUTE via OSRM (kostenlos, kein API-Key) ──
@@ -608,7 +678,10 @@ async function calcRoute(){
     const route  = data.routes[0];
     const coords = route.geometry.coordinates.map(c=>[c[1],c[0]]);
     const distKm = (route.distance/1000).toFixed(1);
-    const durMin = Math.round(route.duration/60);
+    const durTotalMin = Math.round(route.duration/60);
+    const durH   = Math.floor(durTotalMin/60);
+    const durMin = durTotalMin % 60;
+    const durStr = durH > 0 ? `${durH}h ${durMin}min` : `${durMin}min`;
 
     if(routeLayer) map.removeLayer(routeLayer);
     routeLayer = L.polyline(coords,{color:'#f5a623',weight:4,opacity:.85,dashArray:'10 6'}).addTo(map);
@@ -618,7 +691,7 @@ async function calcRoute(){
     isRouteMode = true;
 
     document.getElementById('routeInfo').innerHTML =
-      `Route: <span>${startTxt}</span> → <span>${endTxt}</span> &nbsp;|&nbsp; 🛣 <span>${distKm} km</span> &nbsp;|&nbsp; ⏱ <span>~${durMin} Min</span>`;
+      `Route: <span>${startTxt}</span> → <span>${endTxt}</span> &nbsp;|&nbsp; 🛣 <span>${distKm} km</span> &nbsp;|&nbsp; ⏱ <span>~${durStr}</span>`;
     document.getElementById('sidebarTitle').textContent = 'VORFÄLLE ENTLANG ROUTE';
     document.getElementById('sidebarCount').classList.add('route-mode');
 
