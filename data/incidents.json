@@ -1,5 +1,19 @@
 [
   {
+    "id": "4a31f91c36c5",
+    "title": "Emmen - Verdachte aangehouden na overval winkel Monetpassage",
+    "summary": "De politie heeft een 39-jarige man uit Emmen aangehouden voor betrokkenheid bij een overval op een winkel aan de Monetpassage in Emmen. Hij zit vast en wordt verhoord. De politie doet onderzoek naar de toedracht van het incident.",
+    "category": "Festnahme",
+    "land": "Niederlande",
+    "country": "Niederlande",
+    "location": "Emmen",
+    "lat": 52.7528662,
+    "lng": 6.9525135,
+    "date": "2026-05-07T06:08:00",
+    "url": "https://www.politie.nl/nieuws/2026/mei/7/01-verdachte-aangehouden-na-overval-winkel-monetpassage.html",
+    "source": "rss.politie.nl"
+  },
+  {
     "id": "74b334bd420a",
     "title": "Man charged in connection with attack in Barnet",
     "summary": "He is due to appear at Westminster Magistrates' Court on Friday, 1 May.",
@@ -930,9 +944,9 @@
     "category": "Festnahme",
     "land": "PP Mittelfranken",
     "country": "Deutschland",
-    "location": "Nürnberg",
-    "lat": 49.453872,
-    "lng": 11.077298,
+    "location": "Pkw",
+    "lat": null,
+    "lng": null,
     "date": "2026-05-07T05:40:26.308456+00:00",
     "url": "https://polizei.bayern.de/aktuelles/pressemitteilungen/102089/index.html",
     "source": "www.polizei.bayern.de"
@@ -1154,9 +1168,9 @@
     "category": "Betrug",
     "land": "PP Mittelfranken",
     "country": "Deutschland",
-    "location": "Nürnberg",
-    "lat": 49.453872,
-    "lng": 11.077298,
+    "location": "äuschen einer Notsituation",
+    "lat": null,
+    "lng": null,
     "date": "2026-05-07T05:40:26.304724+00:00",
     "url": "https://polizei.bayern.de/aktuelles/pressemitteilungen/102302/index.html",
     "source": "www.polizei.bayern.de"
