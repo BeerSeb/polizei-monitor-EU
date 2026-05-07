@@ -485,41 +485,122 @@ def scrape_london() -> list[dict]:
     return results
 
 
-# ── ALLE QUELLEN ───────────────────────────────────────────────────────────────
-RSS_SOURCES = [
-    # ── DEUTSCHLAND: Bayern direkt (Schema: polizei.bayern.de/PRÄSIDIUM/polizei.rss) ──
-    {"land": "PP München",           "country": "Deutschland", "url": "https://www.polizei.bayern.de/muenchen/polizei.rss",        "loc": "München"},
-    {"land": "PP Oberbayern Nord",   "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberbayernnord/polizei.rss",  "loc": "Ingolstadt"},
-    {"land": "PP Oberbayern Süd",    "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberbayernsued/polizei.rss",  "loc": "Rosenheim"},
-    {"land": "PP Mittelfranken",     "country": "Deutschland", "url": "https://www.polizei.bayern.de/mittelfranken/polizei.rss",   "loc": "Nürnberg"},
-    {"land": "PP Unterfranken",      "country": "Deutschland", "url": "https://www.polizei.bayern.de/unterfranken/polizei.rss",    "loc": "Würzburg"},
-    {"land": "PP Schwaben Nord",     "country": "Deutschland", "url": "https://www.polizei.bayern.de/schwabennord/polizei.rss",    "loc": "Augsburg"},
-    {"land": "PP Schwaben Süd/West", "country": "Deutschland", "url": "https://www.polizei.bayern.de/schwabensuedwest/polizei.rss","loc": "Kempten"},
-    {"land": "PP Oberfranken",       "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberfranken/polizei.rss",     "loc": "Bayreuth"},
-    {"land": "PP Oberpfalz",         "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberpfalz/polizei.rss",       "loc": "Regensburg"},
-    {"land": "PP Niederbayern",      "country": "Deutschland", "url": "https://www.polizei.bayern.de/niederbayern/polizei.rss",    "loc": "Landshut"},
 
-    # ── DEUTSCHLAND: Restliche Bundesländer via Presseportal (einzig verlässlicher Weg) ──
-    {"land": "Baden-Württemberg",    "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Baden-W%C3%BCrttemberg.rss2"},
-    {"land": "NRW",                  "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Nordrhein-Westfalen.rss2"},
-    {"land": "Hessen",               "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Hessen.rss2"},
-    {"land": "Niedersachsen",        "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Niedersachsen.rss2"},
-    {"land": "Hamburg",              "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Hamburg.rss2"},
-    {"land": "Sachsen",              "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Sachsen.rss2"},
-    {"land": "Brandenburg",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Brandenburg.rss2"},
-    {"land": "Thüringen",            "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Th%C3%BCringen.rss2"},
-    {"land": "Sachsen-Anhalt",       "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Sachsen-Anhalt.rss2"},
-    {"land": "Schleswig-Holstein",   "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Schleswig-Holstein.rss2"},
-    {"land": "Rheinland-Pfalz",      "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Rheinland-Pfalz.rss2"},
-    {"land": "Saarland",             "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Saarland.rss2"},
-    {"land": "Mecklenburg-Vorp.",    "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Mecklenburg-Vorpommern.rss2"},
-    {"land": "Bremen",               "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/r/Bremen.rss2"},
-    # Bundespolizei Presseportal
-    {"land": "Bundespolizei",        "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/73990.rss2"},
+
+# ── ALLE QUELLEN ───────────────────────────────────────────────────────────────
+# Strategie: lokale Polizeipräsidien direkt, max_items=200 für vollständige 30-Tage-Abdeckung
+RSS_SOURCES = [
+    # ── BAYERN: 10 Polizeipräsidien direkt ───────────────────────────────────
+    {"land": "PP München",            "country": "Deutschland", "url": "https://www.polizei.bayern.de/muenchen/polizei.rss",         "loc": "München",    "max": 200},
+    {"land": "PP Oberbayern Nord",    "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberbayernnord/polizei.rss",   "loc": "Ingolstadt", "max": 200},
+    {"land": "PP Oberbayern Süd",     "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberbayernsued/polizei.rss",   "loc": "Rosenheim",  "max": 200},
+    {"land": "PP Mittelfranken",      "country": "Deutschland", "url": "https://www.polizei.bayern.de/mittelfranken/polizei.rss",    "loc": "Nürnberg",   "max": 200},
+    {"land": "PP Unterfranken",       "country": "Deutschland", "url": "https://www.polizei.bayern.de/unterfranken/polizei.rss",     "loc": "Würzburg",   "max": 200},
+    {"land": "PP Schwaben Nord",      "country": "Deutschland", "url": "https://www.polizei.bayern.de/schwabennord/polizei.rss",     "loc": "Augsburg",   "max": 200},
+    {"land": "PP Schwaben Süd/West",  "country": "Deutschland", "url": "https://www.polizei.bayern.de/schwabensuedwest/polizei.rss", "loc": "Kempten",    "max": 200},
+    {"land": "PP Oberfranken",        "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberfranken/polizei.rss",      "loc": "Bayreuth",   "max": 200},
+    {"land": "PP Oberpfalz",          "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberpfalz/polizei.rss",        "loc": "Regensburg", "max": 200},
+    {"land": "PP Niederbayern",       "country": "Deutschland", "url": "https://www.polizei.bayern.de/niederbayern/polizei.rss",     "loc": "Landshut",   "max": 200},
+
+    # ── BADEN-WÜRTTEMBERG: lokale Polizeipräsidien ────────────────────────────
+    {"land": "PP Aalen",              "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110969.rss2", "max": 200},
+    {"land": "PP Freiburg",           "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110970.rss2", "max": 200},
+    {"land": "PP Heilbronn",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110971.rss2", "max": 200},
+    {"land": "PP Karlsruhe",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110972.rss2", "max": 200},
+    {"land": "PP Konstanz",           "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110973.rss2", "max": 200},
+    {"land": "PP Ludwigsburg",        "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110974.rss2", "max": 200},
+    {"land": "PP Stuttgart",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110975.rss2", "max": 200},
+    {"land": "PP Mannheim",           "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/14915.rss2",  "max": 200},
+    {"land": "PP Offenburg",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110976.rss2", "max": 200},
+    {"land": "PP Ravensburg",         "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110977.rss2", "max": 200},
+    {"land": "PP Reutlingen",         "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110978.rss2", "max": 200},
+    {"land": "PP Ulm",                "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110979.rss2", "max": 200},
+
+    # ── NRW: lokale Polizeibehörden ───────────────────────────────────────────
+    {"land": "Polizei Köln",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/12415.rss2",  "max": 200},
+    {"land": "Polizei Düsseldorf",    "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/59488.rss2",  "max": 200},
+    {"land": "Polizei Dortmund",      "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/11851.rss2",  "max": 200},
+    {"land": "Polizei Essen",         "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/11562.rss2",  "max": 200},
+    {"land": "Polizei Bochum",        "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/11530.rss2",  "max": 200},
+    {"land": "Polizei Wuppertal",     "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/11596.rss2",  "max": 200},
+    {"land": "Polizei Bielefeld",     "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/12459.rss2",  "max": 200},
+    {"land": "Polizei Münster",       "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/11187.rss2",  "max": 200},
+    {"land": "Polizei Aachen",        "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/13437.rss2",  "max": 200},
+    {"land": "Polizei Bonn",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/7304.rss2",   "max": 200},
+
+    # ── HESSEN ────────────────────────────────────────────────────────────────
+    {"land": "PP Frankfurt",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/4970.rss2",   "max": 200},
+    {"land": "PP Westhessen",         "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/168771.rss2", "max": 200},
+    {"land": "PP Südhessen",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/4969.rss2",   "max": 200},
+    {"land": "PP Nordhessen",         "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/44143.rss2",  "max": 200},
+    {"land": "PP Mittelhessen",       "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/43751.rss2",  "max": 200},
+    {"land": "PP Osthessen",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/43750.rss2",  "max": 200},
+
+    # ── NIEDERSACHSEN ─────────────────────────────────────────────────────────
+    {"land": "Polizei Hannover",      "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/66841.rss2",  "max": 200},
+    {"land": "PD Osnabrück",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/104236.rss2", "max": 200},
+    {"land": "PD Oldenburg",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/49729.rss2",  "max": 200},
+    {"land": "PD Göttingen",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/119508.rss2", "max": 200},
+    {"land": "PD Lüneburg",           "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/59441.rss2",  "max": 200},
+    {"land": "PD Braunschweig",       "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/11530.rss2",  "max": 200},
+
+    # ── SACHSEN ───────────────────────────────────────────────────────────────
+    {"land": "PP Dresden",            "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/13013.rss2",  "max": 200},
+    {"land": "PP Leipzig",            "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/1247.rss2",   "max": 200},
+    {"land": "PP Chemnitz",           "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/46238.rss2",  "max": 200},
+    {"land": "PP Zwickau",            "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/152631.rss2", "max": 200},
+
+    # ── HAMBURG ───────────────────────────────────────────────────────────────
+    {"land": "Polizei Hamburg",       "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/6337.rss2",   "max": 200},
+
+    # ── BERLIN ────────────────────────────────────────────────────────────────
+    {"land": "Polizei Berlin",        "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/9358.rss2",   "max": 200},
+
+    # ── BRANDENBURG ──────────────────────────────────────────────────────────
+    {"land": "PP Potsdam",            "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/143440.rss2", "max": 200},
+    {"land": "PP Frankfurt/Oder",     "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/107734.rss2", "max": 200},
+
+    # ── THÜRINGEN ────────────────────────────────────────────────────────────
+    {"land": "LPI Erfurt",            "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/126725.rss2", "max": 200},
+    {"land": "LPI Jena",              "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/126726.rss2", "max": 200},
+    {"land": "LPI Suhl",              "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/126727.rss2", "max": 200},
+    {"land": "LPI Gotha",             "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/126728.rss2", "max": 200},
+
+    # ── SACHSEN-ANHALT ────────────────────────────────────────────────────────
+    {"land": "PD Magdeburg",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/115673.rss2", "max": 200},
+    {"land": "PD Halle",              "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/115676.rss2", "max": 200},
+    {"land": "PD Dessau",             "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/115679.rss2", "max": 200},
+
+    # ── SCHLESWIG-HOLSTEIN ────────────────────────────────────────────────────
+    {"land": "PD Kiel",               "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/125275.rss2", "max": 200},
+    {"land": "PD Flensburg",          "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/125273.rss2", "max": 200},
+    {"land": "PD Lübeck",             "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/125272.rss2", "max": 200},
+    {"land": "PD Itzehoe",            "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/125274.rss2", "max": 200},
+
+    # ── RHEINLAND-PFALZ ───────────────────────────────────────────────────────
+    {"land": "PP Mainz",              "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/117706.rss2", "max": 200},
+    {"land": "PP Koblenz",            "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/117704.rss2", "max": 200},
+    {"land": "PP Trier",              "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/117705.rss2", "max": 200},
+    {"land": "PP Kaiserslautern",     "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/117703.rss2", "max": 200},
+    {"land": "PP Ludwigshafen",       "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/117702.rss2", "max": 200},
+
+    # ── MECKLENBURG-VORPOMMERN ────────────────────────────────────────────────
+    {"land": "PP Rostock",            "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/108746.rss2", "max": 200},
+    {"land": "PP Neubrandenburg",     "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/108745.rss2", "max": 200},
+
+    # ── SAARLAND ─────────────────────────────────────────────────────────────
+    {"land": "Landespolizei Saarland","country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/44897.rss2",  "max": 200},
+
+    # ── BREMEN ────────────────────────────────────────────────────────────────
+    {"land": "Polizei Bremen",        "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/68440.rss2",  "max": 200},
+
+    # ── BUNDESPOLIZEI + BKA ───────────────────────────────────────────────────
+    {"land": "Bundespolizei",         "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/73990.rss2",  "max": 200},
+    {"land": "BKA",                   "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/7.rss2",      "max": 200},
 
     # ── NIEDERLANDE (✅ funktioniert) ─────────────────────────────────────────
-    {"land": "Niederlande",          "country": "Niederlande", "url": "https://rss.politie.nl/rss/algemeen/nb/alle-nieuwsberichten.xml"},
-    {"land": "NL Opsporing",         "country": "Niederlande", "url": "https://rss.politie.nl/rss/uitgelicht/nb/alle-uitgelichte-nieuwsberichten.xml"},
+    {"land": "Niederlande",           "country": "Niederlande", "url": "https://rss.politie.nl/rss/algemeen/nb/alle-nieuwsberichten.xml",             "max": 200},
+    {"land": "NL Opsporing",          "country": "Niederlande", "url": "https://rss.politie.nl/rss/uitgelicht/nb/alle-uitgelichte-nieuwsberichten.xml","max": 200},
 ]
 
 
@@ -540,17 +621,28 @@ def deduplicate(incidents: list[dict]) -> list[dict]:
             result.append(inc)
     return result
 
+def within_30_days(date_str: str) -> bool:
+    if not date_str:
+        return False
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).timestamp()
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00")).timestamp() >= cutoff
+    except Exception:
+        return True  # Im Zweifel behalten
+
 
 # ── MAIN ───────────────────────────────────────────────────────────────────────
 def main():
     load_geo_cache()
     load_trans_cache()
 
+    # Bestehende laden – nur noch aktuelle (30d) behalten
     existing = []
     if OUTPUT_FILE.exists():
         try:
-            existing = json.loads(OUTPUT_FILE.read_text(encoding="utf-8"))
-            log.info(f"Bestehend: {len(existing)} Incidents")
+            raw = json.loads(OUTPUT_FILE.read_text(encoding="utf-8"))
+            existing = [e for e in raw if within_30_days(e.get("date", ""))]
+            log.info(f"Bestehend (30d): {len(existing)}/{len(raw)}")
         except Exception:
             pass
     existing_ids = {e["id"] for e in existing}
@@ -565,73 +657,70 @@ def main():
             url=src["url"], land=src["land"], country=src["country"],
             location_override=src.get("loc", ""),
             verify_ssl=src.get("verify_ssl", True),
+            max_items=src.get("max", 200),
         )
-        new = [i for i in items if i["id"] not in existing_ids]
+        new = [i for i in items
+               if i["id"] not in existing_ids and within_30_days(i.get("date", ""))]
         if items: ok += 1
-        log.info(f"  → {len(new)} neue")
+        log.info(f"  → {len(new)} neue (von {len(items)} total)")
         all_new.extend(new)
         time.sleep(0.35)
 
-    # Berlin direkt
+    # Berlin direkt (HTML)
     log.info("HTML → Berlin")
-    for i in (x for x in scrape_berlin() if x["id"] not in existing_ids):
-        all_new.append(i)
+    all_new.extend(x for x in scrape_berlin()
+                   if x["id"] not in existing_ids and within_30_days(x.get("date","")))
     ok += 1
 
     # Österreich
     log.info("HTML → Österreich")
-    for i in (x for x in scrape_austria() if x["id"] not in existing_ids):
-        all_new.append(i)
+    all_new.extend(x for x in scrape_austria()
+                   if x["id"] not in existing_ids and within_30_days(x.get("date","")))
     ok += 1
 
     # Paris
     log.info("→ Paris")
-    for i in (x for x in scrape_paris() if x["id"] not in existing_ids):
-        all_new.append(i)
+    all_new.extend(x for x in scrape_paris()
+                   if x["id"] not in existing_ids and within_30_days(x.get("date","")))
     ok += 1
 
     # Brüssel
     log.info("→ Brüssel")
-    for i in (x for x in scrape_brussels() if x["id"] not in existing_ids):
-        all_new.append(i)
+    all_new.extend(x for x in scrape_brussels()
+                   if x["id"] not in existing_ids and within_30_days(x.get("date","")))
     ok += 1
 
     # London
     log.info("→ London")
-    for i in (x for x in scrape_london() if x["id"] not in existing_ids):
-        all_new.append(i)
+    all_new.extend(x for x in scrape_london()
+                   if x["id"] not in existing_ids and within_30_days(x.get("date","")))
     ok += 1
 
     log.info(f"Quellen OK: {ok} | Neue Incidents: {len(all_new)}")
 
-    # Geocoding nur für neue
+    # Geocoding
     if all_new:
         geocode_batch(all_new)
 
-    # Übersetzung für neue internationale Vorfälle
+    # Übersetzung
     if ANTHROPIC_API_KEY:
-        to_translate = [i for i in all_new if i.get("country") in TRANSLATE_COUNTRIES and not i.get("translated")]
-        log.info(f"Übersetze {len(to_translate)} neue internationale Meldungen …")
+        to_translate = [i for i in all_new
+                        if i.get("country") in TRANSLATE_COUNTRIES and not i.get("translated")]
+        log.info(f"Übersetze {len(to_translate)} internationale Meldungen …")
         for inc in to_translate:
             translate_incident(inc)
     else:
         log.warning("ANTHROPIC_API_KEY nicht gesetzt – Übersetzung übersprungen")
 
-    # Zusammenführen + 30-Tage-Fenster
+    # Zusammenführen: bestehende (30d) + neue, deduplicieren, nach Datum sortieren
     combined = deduplicate(existing + all_new)
     combined.sort(key=lambda x: x.get("date", ""), reverse=True)
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).timestamp()
-    combined = [
-        i for i in combined
-        if i.get("date") and
-        datetime.fromisoformat(i["date"].replace("Z", "+00:00")).timestamp() >= cutoff
-    ]
 
     OUTPUT_FILE.write_text(
         json.dumps(combined, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    geo = sum(1 for i in combined if i["lat"])
-    countries = len({i.get("country","") for i in combined})
+    geo      = sum(1 for i in combined if i["lat"])
+    countries = len({i.get("country", "") for i in combined})
     log.info(f"✓ {len(combined)} Incidents | {geo} georef. | {countries} Länder | {ok} Quellen")
 
 
