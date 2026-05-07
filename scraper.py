@@ -147,6 +147,23 @@ def load_geo_cache():
     global GEO_CACHE
     if GEO_CACHE_FILE.exists():
         GEO_CACHE = json.loads(GEO_CACHE_FILE.read_text(encoding="utf-8"))
+        # Einträge entfernen die nur PP-Namen oder Bundesland-Namen sind
+        # (alte fehlerhafte Cache-Einträge von location_override)
+        pp_names = {
+            "münchen", "ingolstadt", "rosenheim", "nürnberg", "würzburg",
+            "augsburg", "kempten", "bayreuth", "regensburg", "landshut",
+            "pp münchen", "pp oberbayern nord", "pp oberbayern süd",
+            "pp mittelfranken", "pp unterfranken", "pp schwaben nord",
+            "pp schwaben süd/west", "pp oberfranken", "pp oberpfalz",
+            "pp niederbayern", "niederlande", "nl opsporing",
+        }
+        before = len(GEO_CACHE)
+        GEO_CACHE = {k: v for k, v in GEO_CACHE.items()
+                     if k.split("|")[0].lower() not in pp_names}
+        removed = before - len(GEO_CACHE)
+        if removed:
+            log.info(f"Geo-Cache: {removed} veraltete PP-Einträge entfernt")
+            save_geo_cache()
         log.info(f"Geo-Cache: {len(GEO_CACHE)} Einträge")
 
 def save_geo_cache():
@@ -200,20 +217,103 @@ def kategorisieren(text: str) -> str:
             return kat
     return "Sonstiges"
 
-# Ortsextraktion – mehrsprachig
-ORT_RE = re.compile(
-    r"\b(?:in|bei|aus|in der|à|au|en|at|near|in)\s+"
-    r"([A-ZÄÖÜÀ-Ö][a-zäöüà-öß\-]{2,}(?:[\s\-][A-ZÄÖÜÀ-Ö][a-zäöüà-öß\-]{2,})?)",
+# ── ORT EXTRAHIEREN ────────────────────────────────────────────────────────────
+# Polizeimeldungen haben sehr spezifische Ortsformate:
+# "Ereignisort: München-Schwabing" / "in der Bayerstraße in München"
+# "Tatort: Augsburg, Göggingen" / "(ots) - Nürnberg -" / "Essen (ots)"
+
+# 1) Presseportal-typisches Format: "Stadtname (ots)" am Anfang
+PP_OTS_RE = re.compile(
+    r"^([A-ZÄÖÜ][a-zäöüß\-]{2,}(?:[\s/][A-ZÄÖÜ][a-zäöüß\-]{2,})?)\s*\(ots\)",
     re.UNICODE
 )
 
-def extrahiere_ort(text: str) -> str:
-    m = ORT_RE.search(text)
+# 2) Ereignisort-Label
+EREIGNISORT_RE = re.compile(
+    r"(?:Ereignisort|Tatort|Einsatzort|Ort)\s*:?\s*"
+    r"([A-ZÄÖÜ][a-zäöüß\-]{2,}(?:[\s\-/][A-ZÄÖÜ][a-zäöüß\-]{2,})*)",
+    re.UNICODE | re.IGNORECASE
+)
+
+# 3) Bayern-Format: "PP München - Medieninformation ... Grünwald"  oder Stadtname nach " - "
+DASH_ORT_RE = re.compile(
+    r"\(ots\)\s*[-–]\s*([A-ZÄÖÜ][a-zäöüß\-]{2,}(?:[\s/\-][A-ZÄÖÜ][a-zäöüß\-]{2,})?)\s*[-–]",
+    re.UNICODE
+)
+
+# 4) Generisches "in STADTNAME" / "in STADTNAME-STADTTEIL"
+IN_ORT_RE = re.compile(
+    r"\bin\s+([A-ZÄÖÜ][a-zäöüß\-]{2,}(?:[\s\-][A-ZÄÖÜ][a-zäöüß\-]{2,})?)"
+    r"(?:\s*[,\.\(]|\s+(?:wurde|kam|ist|sind|hat|haben|fand|gab|brannte|ereignete))",
+    re.UNICODE
+)
+
+# 5) Stadtname am Zeilenanfang vor " - " (Presseportal-Format)
+LEAD_CITY_RE = re.compile(
+    r"^([A-ZÄÖÜ][a-zäöüß\-]{2,}(?:[\s/][A-ZÄÖÜ][a-zäöüß\-]{2,})?)\s*[-–]",
+    re.UNICODE | re.MULTILINE
+)
+
+# Wörter die kein Ortsname sind
+BLACKLIST = {
+    "der", "die", "das", "dem", "den", "ein", "eine", "und", "oder", "aber",
+    "für", "von", "mit", "nach", "bei", "zum", "zur", "auf", "an", "am", "im",
+    "durch", "gegen", "über", "unter", "vor", "seit", "zwischen", "beim",
+    "polizei", "polizisten", "beamte", "täter", "verdächtige", "opfer", "zeugen",
+    "donnerstag", "freitag", "samstag", "sonntag", "montag", "dienstag", "mittwoch",
+    "januar", "februar", "märz", "april", "mai", "juni", "juli", "august",
+    "september", "oktober", "november", "dezember",
+    "gegen", "uhr", "notfall", "einsatz", "hinweis", "fahndung", "ermittlung",
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+    "january", "february", "march", "april", "june", "july", "august",
+    "september", "october", "november", "december",
+    "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche",
+}
+
+def extrahiere_ort(text: str, fallback: str = "") -> str:
+    """
+    Extrahiert den präzisen Tatort aus einer Polizeimeldung.
+    Versucht mehrere Muster der Reihe nach.
+    """
+    if not text:
+        return fallback
+
+    # 1) Ereignisort-Label hat höchste Priorität
+    m = EREIGNISORT_RE.search(text)
+    if m:
+        ort = m.group(1).strip().rstrip(".,;")
+        if 3 <= len(ort) <= 60 and ort.lower() not in BLACKLIST:
+            return ort
+
+    # 2) "(ots) - Stadtname -" Format
+    m = DASH_ORT_RE.search(text)
     if m:
         ort = m.group(1).strip()
-        if 3 <= len(ort) <= 50:
+        if 3 <= len(ort) <= 50 and ort.lower() not in BLACKLIST:
             return ort
-    return ""
+
+    # 3) "Stadtname (ots)" am Anfang des Titels
+    m = PP_OTS_RE.search(text)
+    if m:
+        ort = m.group(1).strip()
+        if 3 <= len(ort) <= 50 and ort.lower() not in BLACKLIST:
+            return ort
+
+    # 4) Stadtname am Zeilenanfang vor " - "
+    m = LEAD_CITY_RE.search(text)
+    if m:
+        ort = m.group(1).strip()
+        if 3 <= len(ort) <= 50 and ort.lower() not in BLACKLIST:
+            return ort
+
+    # 5) "in Stadtname" mit nachfolgendem Verb/Satzzeichen
+    m = IN_ORT_RE.search(text)
+    if m:
+        ort = m.group(1).strip()
+        if 3 <= len(ort) <= 50 and ort.lower() not in BLACKLIST:
+            return ort
+
+    return fallback
 
 def incident_id(url: str, title: str) -> str:
     return hashlib.md5(f"{url}{title}".encode()).hexdigest()[:12]
@@ -262,7 +362,7 @@ def parse_rss(url: str, land: str, country: str,
                 continue
 
             full = f"{title} {desc}"
-            ort  = location_override or extrahiere_ort(full) or land
+            ort  = extrahiere_ort(full, fallback=location_override or land)
 
             incidents.append({
                 "id":       incident_id(link, title),
@@ -313,7 +413,7 @@ def scrape_html(url: str, land: str, country: str,
                 continue
 
             full = f"{title} {desc}"
-            ort  = location_override or extrahiere_ort(full) or land
+            ort  = extrahiere_ort(full, fallback=location_override or land)
 
             incidents.append({
                 "id":       incident_id(href, title),
@@ -491,16 +591,16 @@ def scrape_london() -> list[dict]:
 # Strategie: lokale Polizeipräsidien direkt, max_items=200 für vollständige 30-Tage-Abdeckung
 RSS_SOURCES = [
     # ── BAYERN: 10 Polizeipräsidien direkt ───────────────────────────────────
-    {"land": "PP München",            "country": "Deutschland", "url": "https://www.polizei.bayern.de/muenchen/polizei.rss",         "loc": "München",    "max": 200},
-    {"land": "PP Oberbayern Nord",    "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberbayernnord/polizei.rss",   "loc": "Ingolstadt", "max": 200},
-    {"land": "PP Oberbayern Süd",     "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberbayernsued/polizei.rss",   "loc": "Rosenheim",  "max": 200},
-    {"land": "PP Mittelfranken",      "country": "Deutschland", "url": "https://www.polizei.bayern.de/mittelfranken/polizei.rss",    "loc": "Nürnberg",   "max": 200},
-    {"land": "PP Unterfranken",       "country": "Deutschland", "url": "https://www.polizei.bayern.de/unterfranken/polizei.rss",     "loc": "Würzburg",   "max": 200},
-    {"land": "PP Schwaben Nord",      "country": "Deutschland", "url": "https://www.polizei.bayern.de/schwabennord/polizei.rss",     "loc": "Augsburg",   "max": 200},
-    {"land": "PP Schwaben Süd/West",  "country": "Deutschland", "url": "https://www.polizei.bayern.de/schwabensuedwest/polizei.rss", "loc": "Kempten",    "max": 200},
-    {"land": "PP Oberfranken",        "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberfranken/polizei.rss",      "loc": "Bayreuth",   "max": 200},
-    {"land": "PP Oberpfalz",          "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberpfalz/polizei.rss",        "loc": "Regensburg", "max": 200},
-    {"land": "PP Niederbayern",       "country": "Deutschland", "url": "https://www.polizei.bayern.de/niederbayern/polizei.rss",     "loc": "Landshut",   "max": 200},
+    {"land": "PP München",            "country": "Deutschland", "url": "https://www.polizei.bayern.de/muenchen/polizei.rss",         "fallback": "München",    "max": 200},
+    {"land": "PP Oberbayern Nord",    "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberbayernnord/polizei.rss",   "fallback": "Ingolstadt", "max": 200},
+    {"land": "PP Oberbayern Süd",     "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberbayernsued/polizei.rss",   "fallback": "Rosenheim",  "max": 200},
+    {"land": "PP Mittelfranken",      "country": "Deutschland", "url": "https://www.polizei.bayern.de/mittelfranken/polizei.rss",    "fallback": "Nürnberg",   "max": 200},
+    {"land": "PP Unterfranken",       "country": "Deutschland", "url": "https://www.polizei.bayern.de/unterfranken/polizei.rss",     "fallback": "Würzburg",   "max": 200},
+    {"land": "PP Schwaben Nord",      "country": "Deutschland", "url": "https://www.polizei.bayern.de/schwabennord/polizei.rss",     "fallback": "Augsburg",   "max": 200},
+    {"land": "PP Schwaben Süd/West",  "country": "Deutschland", "url": "https://www.polizei.bayern.de/schwabensuedwest/polizei.rss", "fallback": "Kempten",    "max": 200},
+    {"land": "PP Oberfranken",        "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberfranken/polizei.rss",      "fallback": "Bayreuth",   "max": 200},
+    {"land": "PP Oberpfalz",          "country": "Deutschland", "url": "https://www.polizei.bayern.de/oberpfalz/polizei.rss",        "fallback": "Regensburg", "max": 200},
+    {"land": "PP Niederbayern",       "country": "Deutschland", "url": "https://www.polizei.bayern.de/niederbayern/polizei.rss",     "fallback": "Landshut",   "max": 200},
 
     # ── BADEN-WÜRTTEMBERG: lokale Polizeipräsidien ────────────────────────────
     {"land": "PP Aalen",              "country": "Deutschland", "url": "https://www.presseportal.de/blaulicht/nr/110969.rss2", "max": 200},
@@ -642,7 +742,26 @@ def main():
         try:
             raw = json.loads(OUTPUT_FILE.read_text(encoding="utf-8"))
             existing = [e for e in raw if within_30_days(e.get("date", ""))]
-            log.info(f"Bestehend (30d): {len(existing)}/{len(raw)}")
+            # Einträge mit PP-Namen als Location neu geocodieren
+            pp_fallbacks = {
+                "münchen", "ingolstadt", "rosenheim", "nürnberg", "würzburg",
+                "augsburg", "kempten", "bayreuth", "regensburg", "landshut",
+                "pp münchen", "pp oberbayern nord", "pp mittelfranken",
+            }
+            reset_count = 0
+            for e in existing:
+                if e.get("location", "").lower() in pp_fallbacks:
+                    # Ort aus Titel neu extrahieren
+                    new_ort = extrahiere_ort(
+                        f"{e.get('title','')} {e.get('summary','')}",
+                        fallback=e.get("location", "")
+                    )
+                    if new_ort != e.get("location", ""):
+                        e["location"] = new_ort
+                        e["lat"] = None
+                        e["lng"] = None
+                        reset_count += 1
+            log.info(f"Bestehend (30d): {len(existing)}/{len(raw)} | {reset_count} Orte neu extrahiert")
         except Exception:
             pass
     existing_ids = {e["id"] for e in existing}
@@ -655,7 +774,7 @@ def main():
         log.info(f"RSS → {src['land']}")
         items = parse_rss(
             url=src["url"], land=src["land"], country=src["country"],
-            location_override=src.get("loc", ""),
+            location_override=src.get("fallback", ""),
             verify_ssl=src.get("verify_ssl", True),
             max_items=src.get("max", 200),
         )
