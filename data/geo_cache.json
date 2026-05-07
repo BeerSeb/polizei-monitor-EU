@@ -110,5 +110,33 @@
   "Lekstraat|Niederlande": [
     52.3446584,
     4.9035921
+  ],
+  "München|Deutschland": [
+    48.1371079,
+    11.5753822
+  ],
+  "Nürnberg|Deutschland": [
+    49.453872,
+    11.077298
+  ],
+  "Würzburg|Deutschland": [
+    49.7780356,
+    9.9434769
+  ],
+  "Bayreuth|Deutschland": [
+    49.9446345,
+    11.5743543
+  ],
+  "Regensburg|Deutschland": [
+    49.0195333,
+    12.0974869
+  ],
+  "Landshut|Deutschland": [
+    48.536217,
+    12.1516551
+  ],
+  "London|Vereinigtes Königreich": [
+    51.5074456,
+    -0.1277653
   ]
 }
