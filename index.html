@@ -546,6 +546,11 @@ function showDetail(d){
       </div>
     </div>
     <div style="font-size:12px;line-height:1.65;color:var(--text);opacity:.9;margin-bottom:8px">${d.summary||'Keine weiteren Details verfügbar.'}</div>
+    ${d.translated && d.summary_original ? `
+      <details style="margin-bottom:8px">
+        <summary style="font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;letter-spacing:.08em">ORIGINALTEXT ANZEIGEN</summary>
+        <div style="margin-top:6px;font-size:11px;line-height:1.6;color:var(--muted);border-left:2px solid var(--border);padding-left:8px">${d.summary_original}</div>
+      </details>` : ''}
     ${d.url&&d.url!=='#'
       ? `<a class="dp-link" href="${d.url}" target="_blank" rel="noopener">→ Originalmeldung öffnen</a>`
       : `<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Kein direkter Link verfügbar</span>`}
