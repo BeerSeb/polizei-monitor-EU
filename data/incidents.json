@@ -364,6 +364,76 @@
     "source": "rss.politie.nl"
   },
   {
+    "id": "2fea9266d0c8",
+    "title": "Vlissingen - Politie houdt man aan na bedreiging met mes in café",
+    "summary": "De politie heeft zondagavond 2 mei 2026, omstreeks 18:30 uur, een 51-jarige man uit Vlissingen aangehouden bij een café aan de Bosjeslaan in Vlissingen, nadat hij met een mes had bedreigd.",
+    "category": "Festnahme",
+    "land": "Niederlande",
+    "country": "Niederlande",
+    "location": "Vlissingen",
+    "lat": 51.4480929,
+    "lng": 3.5697992,
+    "date": "2026-05-03T11:07:00",
+    "url": "https://www.politie.nl/nieuws/2026/mei/3/08-politie-houdt-man-aan-na-bedreiging-met-mes-in-cafe.html",
+    "source": "rss.politie.nl"
+  },
+  {
+    "id": "c3102c7ea967",
+    "title": "Middelburg - Politie houdt verdachte aan na steekincident in Middelburg",
+    "summary": "De politie heeft in de nacht van zondag 3 mei, omstreeks 01:00 uur, een man aangehouden op verdenking van poging doodslag. Het incident vond plaats in het azc aan op de Laurens Stommesweg in Middelburg. Het 18-jarige slachtoffer, inwoner van het azc, werd met steekwonden aangetroffen en naar het ziekenhuis is vervoerd voor medische behandeling.",
+    "category": "Festnahme",
+    "land": "Niederlande",
+    "country": "Niederlande",
+    "location": "Middelburg",
+    "lat": 51.4996784,
+    "lng": 3.6137371,
+    "date": "2026-05-03T11:00:00",
+    "url": "https://www.politie.nl/nieuws/2026/mei/3/08-politie-houdt-verdachte-aan-na-steekincident-in-het-azc.html",
+    "source": "rss.politie.nl"
+  },
+  {
+    "id": "059e286c7f33",
+    "title": "Amsterdam - Slachtoffer steekincident aangetroffen Wg-Plein",
+    "summary": "In Amsterdam west is zondag ochtend nabij de Eerste Helmersstraat aan het WG-plein een slachtoffer van een steekincident aangetroffen.",
+    "category": "Sonstiges",
+    "land": "Niederlande",
+    "country": "Niederlande",
+    "location": "Niederlande",
+    "lat": 52.2434979,
+    "lng": 5.6343227,
+    "date": "2026-05-03T10:26:00",
+    "url": "https://www.politie.nl/nieuws/2026/mei/3/05-slachtoffer-steekincident-aangetroffen-wg-plein.html",
+    "source": "rss.politie.nl"
+  },
+  {
+    "id": "4a6c98c13c9c",
+    "title": "Hoofddorp - Inbrekers op heterdaad aangehouden in Hoofddorp",
+    "summary": "Op zaterdagochtend 2 mei om 06.00 uur kreeg de politie een melding van een woninginbraak aan de Thomas Harriotlaan in Hoofddorp. Drie inbrekers, twee mannen van 23 jaar en één man van 22 jaar uit Amsterdam, zijn op heterdaad aangehouden.",
+    "category": "Einbruch",
+    "land": "Niederlande",
+    "country": "Niederlande",
+    "location": "Hoofddorp",
+    "lat": 52.305554,
+    "lng": 4.6926644,
+    "date": "2026-05-03T08:27:00",
+    "url": "https://www.politie.nl/nieuws/2026/mei/3/04-inbrekers-op-heterdaad-aangehouden-in-hoofddorp.html",
+    "source": "rss.politie.nl"
+  },
+  {
+    "id": "088bf7bb745c",
+    "title": "Winschoten - Aanhoudingen en gewonden na conflict in Lekstraat in Winschoten",
+    "summary": "De politie heeft vrijdagavond 1 mei acht aanhoudingen verricht na een conflict tussen meerdere personen in de Lekstraat in Winschoten. Daarbij zijn drie personen gewond geraakt. De politie doet onderzoek naar de toedracht en achtergrond van het conflict.",
+    "category": "Sonstiges",
+    "land": "Niederlande",
+    "country": "Niederlande",
+    "location": "Lekstraat",
+    "lat": 52.3446584,
+    "lng": 4.9035921,
+    "date": "2026-05-02T11:06:00",
+    "url": "https://www.politie.nl/nieuws/2026/mei/2/01-aanhoudingen-en-gewonden-na-conflict-in-lekstraat-in-winschoten.html",
+    "source": "rss.politie.nl"
+  },
+  {
     "id": "ed26f640f4fa",
     "title": "Man Jailed for Attempt Rape, Peel Park, Bradford",
     "summary": "Man Jailed for Attempt Rape, Peel Park, Bradford\nA man has been given an extended 18-and-a-half-year sentence after being found guilty of attempt rape at a Bradford park.\nnatasia.middleton\n02/05/2026 - 07:47\n",
@@ -502,19 +572,5 @@
     "date": "2026-04-21T08:36:00",
     "url": "https://www.politie.nl/nieuws/2026/april/21/07-vier-aanhoudingen-in-onderzoek-zware-mishandeling-ramlehweg.html",
     "source": "rss.politie.nl"
-  },
-  {
-    "id": "0fcd6d791c90",
-    "title": "National Police Dog Trials",
-    "summary": "National Police Dog Trials \nharriet.rowe\n05/03/2026 - 15:02\n",
-    "category": "Sonstiges",
-    "land": "West Yorkshire Police",
-    "country": "Vereinigtes Königreich",
-    "location": "West Yorkshire Police",
-    "lat": 53.6571782,
-    "lng": -1.5230933,
-    "date": "2026-03-05T15:02:07+00:00",
-    "url": "https://www.westyorkshire.police.uk/node/198896",
-    "source": "www.westyorkshire.police.uk"
   }
 ]
