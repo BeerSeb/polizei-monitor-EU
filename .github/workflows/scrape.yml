@@ -36,6 +36,8 @@ jobs:
         run: pip install requests beautifulsoup4 lxml
 
       - name: Scraper ausführen
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python scraper.py
 
       - name: Daten committen und pushen
