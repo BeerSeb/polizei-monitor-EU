@@ -1,28 +1,22 @@
-name: Scrape Europa Polizei Monitor
+name: Scrape Deutschland Polizei Monitor
 
 on:
   schedule:
-    #  07:00 CET  = 06:00 UTC (Winterzeit)
-    #  07:00 CEST = 05:00 UTC (Sommerzeit)
-    #  Wir nutzen 05:00 UTC → läuft immer spätestens um 07:00 CET
-    - cron: "0 5 * * *"
-  workflow_dispatch:   # manuell auslösbar
+    - cron: "0 5 * * *"   # 07:00 CET / 06:00 CEST
+  workflow_dispatch:
 
 permissions:
   contents: write
   pages: write
   id-token: write
 
-# Nur ein gleichzeitiger Deploy
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # ── JOB 1: Scrapen & Daten committen ──────────────────────────────────────
   scrape:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,27 +34,39 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python scraper.py
 
+      - name: Incidents-Anzahl prüfen
+        run: |
+          if [ -f data/incidents.json ]; then
+            COUNT=$(python3 -c "import json; d=json.load(open('data/incidents.json')); print(len(d))")
+            echo "✓ incidents.json enthält $COUNT Einträge"
+          else
+            echo "✗ data/incidents.json wurde NICHT erstellt!"
+            exit 1
+          fi
+
       - name: Daten committen und pushen
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/incidents.json data/geo_cache.json || true
-          git diff --cached --quiet || git commit -m "chore: update incidents $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push
+          git add data/incidents.json data/geo_cache.json data/translation_cache.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen – kein Commit nötig"
+          else
+            git commit -m "chore: update incidents $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi
 
-  # ── JOB 2: GitHub Pages neu deployen ──────────────────────────────────────
   deploy:
-    needs: scrape          # läuft erst nach erfolgreichem Scrape
+    needs: scrape
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Checkout (mit frischen Daten)
         uses: actions/checkout@v4
         with:
-          ref: main        # holt den soeben gepushten Commit
+          ref: main
 
       - name: GitHub Pages Setup
         uses: actions/configure-pages@v5
@@ -68,7 +74,7 @@ jobs:
       - name: Artefakt hochladen
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."        # gesamtes Repo-Root (index.html + data/)
+          path: "."
 
       - name: Seite deployen
         id: deployment
