@@ -126,5 +126,137 @@
   "Yorkshire|Vereinigtes Königreich": [
     53.9825271,
     -1.38525
+  ],
+  "Bayern": [
+    48.9467562,
+    11.4038717
+  ],
+  "Mehrfamilienhaus": [
+    54.3024349,
+    10.8553124
+  ],
+  "Höchstadt": [
+    49.2416656,
+    8.2109957
+  ],
+  "Regenstauf\nAuf": [
+    null,
+    null
+  ],
+  "Fabrikgebäude\nBrand": [
+    null,
+    null
+  ],
+  "Nürnberg": [
+    49.453872,
+    11.077298
+  ],
+  "Erding\nAuf": [
+    null,
+    null
+  ],
+  "Traunreut": [
+    47.9623271,
+    12.5924162
+  ],
+  "Memmingen": [
+    47.9863099,
+    10.1808016
+  ],
+  "Roth\nAuf": [
+    51.3876635,
+    6.5095552
+  ],
+  "Mehrfamilienhaus\nAuf": [
+    null,
+    null
+  ],
+  "Brand": [
+    49.961395,
+    11.8988419
+  ],
+  "Pfaffing\nAuf": [
+    null,
+    null
+  ],
+  "Krankenhaus": [
+    48.8142806,
+    11.5072863
+  ],
+  "Machtling": [
+    null,
+    null
+  ],
+  "Untersuchungshaft\nAuf": [
+    null,
+    null
+  ],
+  "Solarpark": [
+    51.4874686,
+    10.7937043
+  ],
+  "Vollbrand\nAuf": [
+    null,
+    null
+  ],
+  "Neu-Ulm": [
+    48.3953489,
+    10.0005211
+  ],
+  "Asylbewerberunterkunft": [
+    49.0360936,
+    8.6970826
+  ],
+  "Regensburg": [
+    49.0195333,
+    12.0974869
+  ],
+  "Dachau": [
+    48.2592477,
+    11.4354419
+  ],
+  "Werkstatthalle\nPressemeldung": [
+    null,
+    null
+  ],
+  "Haft": [
+    48.6574397,
+    8.1179253
+  ],
+  "Wohnhaus": [
+    51.0321275,
+    6.3230113
+  ],
+  "Einkaufszentrum": [
+    53.9880178,
+    11.196446
+  ],
+  "Regensburg\nAuf": [
+    49.0349549,
+    12.0587612
+  ],
+  "Hemau\nAuf": [
+    null,
+    null
+  ],
+  "Wohnhaus\nAuf": [
+    48.793497,
+    9.1908213
+  ],
+  "Zusammenhang": [
+    52.4733893,
+    13.4498925
+  ],
+  "Preinerszell": [
+    48.53648,
+    11.6062114
+  ],
+  "Verbrauchermarkt\nAuf": [
+    null,
+    null
+  ],
+  "Fürth": [
+    49.4885711,
+    10.9587203
   ]
 }
